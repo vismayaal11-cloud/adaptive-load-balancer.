@@ -1,4 +1,3 @@
-
 import json
 import socket
 import time
@@ -8,7 +7,7 @@ PORT = 8000
 REQUESTS = 5
 
 def test_backend_failure():
-    successful = 0
+    results = []
 
     for request_id in range(1, REQUESTS + 1):
         request = {
@@ -25,21 +24,25 @@ def test_backend_failure():
                 response = json.loads(reader.readline())
 
             print(f"Request {request_id}: {response}")
-
-            if response.get("status") == "ok":
-                successful += 1
+            results.append(response)
 
         except (OSError, ValueError) as error:
             print(f"Request {request_id} failed: {error}")
+            results.append({"status": "connection_error"})
 
         time.sleep(0.2)
 
-    print(f"\nSuccessful requests: {successful}/{REQUESTS}")
+    first_failed = results[0].get("status") != "ok"
+    remaining_succeeded = all(
+        result.get("status") == "ok"
+        and result.get("server") == "server2"
+        for result in results[1:]
+    )
 
-    if successful == REQUESTS:
-        print("FAILURE TEST: PASS")
+    if first_failed and remaining_succeeded:
+        print("\nFAILOVER TEST: PASS")
     else:
-        print("FAILURE TEST: NOT PASSED")
+        print("\nFAILOVER TEST: NOT PASSED")
 
 if __name__ == "__main__":
     test_backend_failure()
